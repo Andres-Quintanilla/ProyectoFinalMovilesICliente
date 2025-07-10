@@ -2,6 +2,9 @@ package com.example.ProyectoFinalMovilesCliente.data.repository
 
 import android.content.Context
 import com.example.ProyectoFinalMovilesCliente.data.model.Categoria
+import com.example.ProyectoFinalMovilesCliente.data.model.Cita
+import com.example.ProyectoFinalMovilesCliente.data.model.CitaRequest
+import com.example.ProyectoFinalMovilesCliente.data.model.Mensaje
 import com.example.ProyectoFinalMovilesCliente.data.model.Trabajador
 import com.example.ProyectoFinalMovilesCliente.data.network.InstanciaRetrofit
 import com.example.ProyectoFinalMovilesCliente.util.GestorToken
@@ -28,13 +31,38 @@ class Repository(private val context: Context) {
         return api.getTrabajadorDetalle(id)
     }
 
-    fun crearCita(workerId: Int, categoryId: Int): Call<Unit> {
-        val body = mapOf(
-            "worker_id" to workerId,
-            "category_selected_id" to categoryId
-        )
+    fun crearCita(workerId: Int, categoryId: Int): Call<Cita> {
+        val body = CitaRequest(workerId, categoryId)
         return api.crearCita(body)
     }
+
+
+    suspend fun getMensajes(id: Int, onSuccess: (List<Mensaje>) -> Unit, onError: (String) -> Unit) {
+        try {
+            val res = api.obtenerMensajes(id)
+            if (res.isSuccessful) {
+                onSuccess(res.body() ?: listOf())
+            } else {
+                onError("Error al obtener mensajes")
+            }
+        } catch (e: Exception) {
+            onError("Excepción: ${e.message}")
+        }
+    }
+
+    suspend fun enviarMensaje(id: Int, mensaje: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        try {
+            val res = api.enviarMensaje(id, mapOf("message" to mensaje))
+            if (res.isSuccessful) {
+                onSuccess()
+            } else {
+                onError("Error al enviar mensaje")
+            }
+        } catch (e: Exception) {
+            onError("Excepción: ${e.message}")
+        }
+    }
+
 
     fun guardarToken(token: String) = gestorToken.guardarToken(token)
     fun obtenerToken() = gestorToken.obtenerToken()

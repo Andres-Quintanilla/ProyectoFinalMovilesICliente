@@ -6,14 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
-import com.example.ProyectoFinalMovilesCliente.data.model.Trabajador
+import com.example.ProyectoFinalMovilesCliente.data.model.Cita
+import com.example.ProyectoFinalMovilesCliente.data.repository.Repository
 import com.example.ProyectoFinalMovilesCliente.viewModel.CitaViewModel
 import com.example.ProyectoFinalMovilesCliente.viewModel.InfoTrabajadorViewModel
 import com.example.proyectofinalmovilescliente.R
 import com.example.proyectofinalmovilescliente.databinding.FragmentInfoTrabajadorBinding
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 class InfoTrabajadorFragment : Fragment() {
@@ -28,6 +31,8 @@ class InfoTrabajadorFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         trabajadorId = arguments?.getInt("trabajadorId") ?: 0
+        categoriaIdSeleccionada = arguments?.getInt("categoriaId") ?: 0
+
     }
 
     override fun onCreateView(
@@ -39,8 +44,7 @@ class InfoTrabajadorFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewModel = ViewModelProvider(this)[InfoTrabajadorViewModel::class.java]
-        citaViewModel = ViewModelProvider(this)[CitaViewModel::class.java]
+        viewModel = InfoTrabajadorViewModel()
 
         viewModel.trabajador.observe(viewLifecycleOwner) { trabajador ->
             val imagen = if (trabajador.picture_url == "null") null else trabajador.picture_url
@@ -64,31 +68,37 @@ class InfoTrabajadorFragment : Fragment() {
             binding.textResenas.text = textoResenas
 
             binding.btnContactar.setOnClickListener {
-                citaViewModel.crearCita(requireContext(), trabajador.id, categoriaIdSeleccionada)
+                val call = Repository(requireContext()).crearCita(trabajador.id, categoriaIdSeleccionada)
+                call.enqueue(object : Callback<Cita> {
+                    override fun onResponse(call: Call<Cita>, response: Response<Cita>) {
+                        if (response.isSuccessful) {
+                            val idCita = response.body()?.id
+                            if (idCita != null) {
+                                val bundle = Bundle().apply {
+                                    putInt("appointmentId", idCita)
+                                }
+                                findNavController().navigate(R.id.action_infoTrabajadorFragment_to_chatFragment, bundle)
+                            } else {
+                                Toast.makeText(requireContext(), "No se obtuvo ID de cita", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(requireContext(), "Error al crear cita", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<Cita>, t: Throwable) {
+                        Toast.makeText(requireContext(), "Fallo en la red", Toast.LENGTH_SHORT).show()
+                    }
+                })
             }
-        }
 
-        citaViewModel.citaCreada.observe(viewLifecycleOwner) {
-            if (it) {
-                Toast.makeText(requireContext(), "Cita creada correctamente", Toast.LENGTH_SHORT).show()
-                val bundle = Bundle().apply {
-                    putInt("trabajadorId", trabajadorId)
-                }
-                //findNavController().navigate(R.id.action_infoTrabajadorFragment_to_chatFragment, bundle)
-            }
         }
-
-        citaViewModel.error.observe(viewLifecycleOwner) {
-            Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
-        }
-
 
         viewModel.error.observe(viewLifecycleOwner) {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         }
 
         viewModel.cargarTrabajadorDetalle(requireContext(), trabajadorId)
-
     }
 
 

@@ -56,5 +56,14 @@
         android:id="@+id/infoTrabajadorFragment"
         android:name="com.example.ProyectoFinalMovilesCliente.ui.InfoTrabajadorFragment"
         android:label="fragment_info_trabajador"
-        tools:layout="@layout/fragment_info_trabajador" />
+        tools:layout="@layout/fragment_info_trabajador" >
+        <action
+            android:id="@+id/action_infoTrabajadorFragment_to_chatFragment"
+            app:destination="@id/chatFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.ProyectoFinalMovilesCliente.ui.ChatFragment"
+        android:label="fragment_chat"
+        tools:layout="@layout/fragment_chat" />
 </navigation>
